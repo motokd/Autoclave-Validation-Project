@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+
+<AnchorPane prefHeight="800.0" prefWidth="1400.0" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="application.MainController">
+   <children>
+      <TableView fx:id="tv_autoclaves" layoutX="26.0" layoutY="77.0" prefHeight="678.0" prefWidth="920.0">
+        <columns>
+          <TableColumn fx:id="col_entryNumber" prefWidth="70.0" text="Entry Number" />
+          <TableColumn fx:id="col_propertyID" prefWidth="111.0" text="Property ID" />
+            <TableColumn fx:id="col_runDate" prefWidth="85.0" text="Date" />
+            <TableColumn fx:id="colRunTime" prefWidth="93.0" text="Run Time (hrs)" />
+            <TableColumn fx:id="col_temperature" prefWidth="99.0" text="Temperature (F)" />
+            <TableColumn fx:id="col_pressure" prefWidth="116.0" text="Pressure" />
+            <TableColumn fx:id="col_tResult" prefWidth="64.0" text="Pass/Fail" />
+            <TableColumn fx:id="col_loadDesc" prefWidth="281.0" text="Load Description" />
+        </columns>
+      </TableView>
+      <Label layoutX="972.0" layoutY="149.0" text="Property ID" />
+      <Label layoutX="1196.0" layoutY="143.0" text="Pass/Fail" />
+      <Label layoutX="975.0" layoutY="259.0" text="Date" />
+      <Label layoutX="1202.0" layoutY="259.0" text="Total Runtime (hrs)" />
+      <Label layoutX="974.0" layoutY="375.0" text="Pressure" />
+      <Label layoutX="1208.0" layoutY="369.0" text="Temperature" />
+      <Label layoutX="950.0" layoutY="484.0" text="Description of Autoclave Load" />
+      <DatePicker fx:id="df_startTime" layoutX="975.0" layoutY="279.0" />
+      <TextField fx:id="tf_propertyID" layoutX="972.0" layoutY="175.0" />
+      <TextField fx:id="tf_tResult" layoutX="1189.0" layoutY="169.0" />
+      <TextField fx:id="tf_pressure" layoutX="972.0" layoutY="394.0" />
+      <TextField fx:id="tf_temperature" layoutX="1202.0" layoutY="388.0" />
+      <TextArea fx:id="tf_loadDesc" layoutX="950.0" layoutY="515.0" prefHeight="148.0" prefWidth="420.0" />
+      <TextField fx:id="tf_runtime" layoutX="1198.0" layoutY="279.0" />
+      <Button fx:id="updateBtn" layoutX="1101.0" layoutY="716.0" mnemonicParsing="false" onAction="#handleButtonAction" text="Update Record" />
+      <Label layoutX="966.0" layoutY="69.0" text="Entry Number" />
+      <TextField fx:id="tf_entryNo" layoutX="971.0" layoutY="89.0" prefHeight="25.0" prefWidth="61.0" />
+      <Button fx:id="insertBtn" layoutX="990.0" layoutY="716.0" mnemonicParsing="false" onAction="#handleButtonAction" text="Insert Record" />
+   </children>
+</AnchorPane>
