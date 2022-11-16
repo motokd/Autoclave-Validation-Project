@@ -197,36 +197,59 @@ public class MainController implements Initializable {
 		showAutoclaves();
 	}
 	
+	/**
+	 * This is the INSERT operation
+	 */
 	private void insertRecord() {
 		String query = "INSERT INTO sys.atest (entry_no, prop_id, run_date, runtime, temperature, pressure, t_result, load_desc) values (?, ?, ?, ?, ?, ?, ?, ?)";
 		Connection conn = getConnection();
 		try {
-			PreparedStatement pst = conn.prepareStatement(query);
-			// reformat the date to the acceptable MySQL format which is 'yyyy-mm-dd'
-			String fDate = df_startTime.getValue().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 			
-			int entryInt = Integer.parseInt(tf_entryNo.getText());
-			int runInt = Integer.parseInt(tf_runtime.getText());
-			int tempInt = Integer.parseInt(tf_temperature.getText());
-			int pressInt = Integer.parseInt(tf_pressure.getText());
+			if (tf_propertyID.getText().equals("") || tf_propertyID.getText().trim().isEmpty()
+					|| tf_tResult.getText().equals("") || tf_tResult.getText().trim().isEmpty()
+					|| tf_temperature.getText().equals("") || tf_temperature.getText().trim().isEmpty()
+					|| tf_pressure.getText().equals("") || tf_pressure.getText().trim().isEmpty()
+					|| tf_runtime.getText().equals("") || tf_runtime.getText().trim().isEmpty()) {
+				System.out.println("Error: Missing fields");
+				Alert alert = new Alert(Alert.AlertType.WARNING);
+				alert.setTitle("INSERT UNSUCCESSFUL");
+				alert.setContentText("INSERT Unsuccessful: Missing data, please make sure all fields are completed");
+				alert.showAndWait();
+			} else {
+				PreparedStatement pst = conn.prepareStatement(query);
+				// reformat the date to the acceptable MySQL format which is 'yyyy-mm-dd'
+				String fDate = df_startTime.getValue().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+				
+				int entryInt = Integer.parseInt(tf_entryNo.getText());
+				int runInt = Integer.parseInt(tf_runtime.getText());
+				int tempInt = Integer.parseInt(tf_temperature.getText());
+				int pressInt = Integer.parseInt(tf_pressure.getText());
+				
+				pst.setInt(1, entryInt);
+				pst.setString(2, tf_propertyID.getText());
+				pst.setString(3, fDate);
+				pst.setInt(4, runInt);
+				pst.setInt(5, tempInt);
+				pst.setInt(6, pressInt);
+				pst.setString(7, tf_tResult.getText());
+				pst.setString(8, tf_loadDesc.getText());
+				pst.executeUpdate();
+				
+				//clear the fields
+				clearFields();
+			}
 			
-			pst.setInt(1, entryInt);
-			pst.setString(2, tf_propertyID.getText());
-			pst.setString(3, fDate);
-			pst.setInt(4, runInt);
-			pst.setInt(5, tempInt);
-			pst.setInt(6, pressInt);
-			pst.setString(7, tf_tResult.getText());
-			pst.setString(8, tf_loadDesc.getText());
-			pst.executeUpdate();
-			
-			//clear the fields
-			clearFields();
 			
 		}catch(Exception e) {
-			e.printStackTrace();
+			System.out.println("Error: Entry Number Exists");
+			Alert alert = new Alert(Alert.AlertType.WARNING);
+			alert.setTitle("INSERT UNSUCCESSFUL");
+			alert.setContentText("INSERT Unsuccessful: Entry number already exists. Enter a new number.");
+			alert.showAndWait();
+			tf_entryNo.setText(null);
 		}
 	}
+	
 	
 	/** 
 	 * This method is the event handler for when a user clicks on a row in the table. The listener returns the values at each column
