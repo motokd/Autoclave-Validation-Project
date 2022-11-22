@@ -115,7 +115,7 @@ public class MainController implements Initializable {
 		Connection conn;
 		try {
 			// everything up to localhost:3306/ should be correct. Only thing that may need corrected is the table name......
-			conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/sys", "root", "cs469");
+			conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/sys", "xxxx", "xxxx");
 			System.out.println("connection successful");
 			return conn;
 		}catch(Exception ex){
