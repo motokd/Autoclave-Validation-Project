@@ -13,6 +13,7 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.ResourceBundle;
 
 import javafx.collections.FXCollections;
@@ -21,6 +22,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.control.ButtonType;
@@ -70,6 +72,8 @@ public class MainController implements Initializable {
 	private Button updateBtn;
 	@FXML
 	private Button insertBtn;
+	@FXML
+	private Button deleteBtn;
 	
 	
 	@FXML
@@ -78,16 +82,30 @@ public class MainController implements Initializable {
 			updateRecord();
 		} if (event.getSource() == insertBtn) {
 			insertRecord();
-			
-			// this is how you get the table to refresh.... commented out as this is "next weeks" work along with data validation
-			//tv_autoclaves.refresh();
-			//showAutoclaves();
+			tv_autoclaves.refresh();
+			showAutoclaves();
+		} if (event.getSource() == deleteBtn) {
+			deleteBtn.setOnAction(e -> {
+				// this will ask the user to confirm deletion
+				Alert delAlert = new Alert(AlertType.CONFIRMATION);
+				delAlert.setHeaderText("Confirm Deletion?");
+				delAlert.setContentText("Continuing will perminantly delete this record. Are you sure you wish to continue?");
+				Optional <ButtonType> action = 	delAlert.showAndWait();
+				
+				// if the user confirms they want to delete the record, proceed with deleting the record
+				if(action.get() == ButtonType.OK) {
+					deleteRecord();
+					tv_autoclaves.refresh();
+					showAutoclaves();
+				}
+			});	
 		}
 	}
 	
 	@Override
 	public void initialize(URL url, ResourceBundle rb) {
 		updateBtn.setDisable(true);
+		deleteBtn.setDisable(true);
 		addListenerForTable();
 		showAutoclaves();
 	}
@@ -97,7 +115,7 @@ public class MainController implements Initializable {
 		Connection conn;
 		try {
 			// everything up to localhost:3306/ should be correct. Only thing that may need corrected is the table name......
-			conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/sys", "xxx", "xxx");
+			conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/sys", "root", "cs469");
 			System.out.println("connection successful");
 			return conn;
 		}catch(Exception ex){
@@ -250,7 +268,6 @@ public class MainController implements Initializable {
 		}
 	}
 	
-	
 	/** 
 	 * This method is the event handler for when a user clicks on a row in the table. The listener returns the values at each column
 	 * into the applicable field.
@@ -260,6 +277,7 @@ public class MainController implements Initializable {
 			if(newSelection != null) {
 				updateBtn.setDisable(false);
 				insertBtn.setDisable(true);
+				deleteBtn.setDisable(false);
 				tf_propertyID.setText(newSelection.getProp_id());
 				tf_loadDesc.setText(newSelection.getLoad_desc());
 				tf_tResult.setText(newSelection.getT_result());
@@ -276,8 +294,26 @@ public class MainController implements Initializable {
 				tf_entryNo.setEditable(false); // set to false so that you cannot accidently edit the wrong entry and/or an entry that does not exist
 			} else {
 				updateBtn.setDisable(true);
+				deleteBtn.setDisable(true);
 			}
 		});
+	}
+	
+	/**
+	 * This is the DELETE operation
+	 */
+	private void deleteRecord() {
+		String query = "DELETE from sys.atest WHERE entry_no = ?";
+		Connection conn = getConnection();
+		try {
+			PreparedStatement pst = conn.prepareStatement(query);
+			pst.setString(1, tf_entryNo.getText());
+			pst.executeUpdate();
+			insertBtn.setDisable(false); // make the insert button appear again
+			
+		} catch(Exception e) {
+			System.out.println("Couldnt delete");
+		}
 	}
 	
     private void executeQuery(String query) {
