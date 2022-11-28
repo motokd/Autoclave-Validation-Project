@@ -67,6 +67,8 @@ public class MainController implements Initializable {
 	@FXML
 	private TextField tf_temperature;
 	@FXML
+	private TextField tf_select;
+	@FXML
 	private TextArea tf_loadDesc;
 	@FXML
 	private Button updateBtn;
@@ -74,6 +76,10 @@ public class MainController implements Initializable {
 	private Button insertBtn;
 	@FXML
 	private Button deleteBtn;
+	@FXML
+	private Button filterBtn;
+	@FXML
+	private Button clearBtn;
 	
 	
 	@FXML
@@ -99,6 +105,11 @@ public class MainController implements Initializable {
 					showAutoclaves();
 				}
 			});	
+		} if (event.getSource() == filterBtn) {
+			selectRecords();
+			showFilteredAutoclaves();
+		} if (event.getSource() == clearBtn) {
+			clearFilter();
 		}
 	}
 	
@@ -115,7 +126,7 @@ public class MainController implements Initializable {
 		Connection conn;
 		try {
 			// everything up to localhost:3306/ should be correct. Only thing that may need corrected is the table name......
-			conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/sys", "xxxx", "xxxx");
+			conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/sys", "root", "cs469");
 			System.out.println("connection successful");
 			return conn;
 		}catch(Exception ex){
@@ -152,6 +163,52 @@ public class MainController implements Initializable {
 	 */
 	public void showAutoclaves() {
 		ObservableList<Autoclaves> list = getAutoclavesList();
+		
+		// need to finish this!!!!!!!!!!!
+		col_entryNumber.setCellValueFactory(new PropertyValueFactory<Autoclaves, Integer>("entry_no"));
+		col_propertyID.setCellValueFactory(new PropertyValueFactory<Autoclaves, String>("prop_id"));
+		col_runDate.setCellValueFactory(new PropertyValueFactory<Autoclaves, Date>("run_date"));
+		colRunTime.setCellValueFactory(new PropertyValueFactory<Autoclaves, Integer>("runtime"));
+		col_temperature.setCellValueFactory(new PropertyValueFactory<Autoclaves, Integer>("temperature"));
+		col_pressure.setCellValueFactory(new PropertyValueFactory<Autoclaves, Integer>("pressure"));
+		col_loadDesc.setCellValueFactory(new PropertyValueFactory<Autoclaves, String>("load_desc"));
+		col_tResult.setCellValueFactory(new PropertyValueFactory<Autoclaves, String>("t_result"));
+		
+		tv_autoclaves.setItems(list);
+		
+	}
+	
+	/**
+	 * This returns the list of autoclave entries by propertyID
+	 * @return autoclaveList
+	 */
+	public ObservableList<Autoclaves> selectRecords() {
+		ObservableList<Autoclaves> autoclaveList = FXCollections.observableArrayList();
+		Connection conn = getConnection();
+		String query = "SELECT * FROM atest WHERE prop_id = '" + tf_select.getText() + "'";
+		Statement st;
+		ResultSet rs;
+		
+		try {
+			System.out.println("Attempting Connection...");
+			st = conn.createStatement();
+			rs = st.executeQuery(query);
+			Autoclaves autoclaves;
+			while(rs.next()) {
+				System.out.println("reading info...");
+				autoclaves = new Autoclaves(rs.getInt("entry_no"), rs.getString("prop_id"), rs.getDate("run_date"), rs.getInt("runtime"), rs.getInt("temperature"), rs.getInt("pressure"), rs.getString("t_result"), rs.getString("load_desc"));
+				autoclaveList.add(autoclaves);
+			}
+		}catch(Exception ex) {
+			ex.printStackTrace();
+		}
+		return autoclaveList;
+	}
+	/**
+	 * This displays the list of autoclave entries by propertyID
+	 */
+	public void showFilteredAutoclaves() {
+		ObservableList<Autoclaves> list = selectRecords();
 		
 		// need to finish this!!!!!!!!!!!
 		col_entryNumber.setCellValueFactory(new PropertyValueFactory<Autoclaves, Integer>("entry_no"));
@@ -339,6 +396,14 @@ public class MainController implements Initializable {
     	tf_loadDesc.setText(null);
     	tf_entryNo.setText(null);
     	df_startTime.setValue(null);
+    }
+    
+    /**
+     * This method clears the SELECT filter and returns all the autoclave entries
+     */
+    private void clearFilter() {
+    	tf_select.clear();
+    	showAutoclaves();
     }
 
 }
