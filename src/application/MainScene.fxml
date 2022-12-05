@@ -42,8 +42,9 @@
       <TextField fx:id="tf_entryNo" layoutX="971.0" layoutY="89.0" prefHeight="25.0" prefWidth="61.0" />
       <Button fx:id="insertBtn" layoutX="990.0" layoutY="716.0" mnemonicParsing="false" onAction="#handleButtonAction" text="Insert Record" />
       <Button fx:id="deleteBtn" layoutX="1227.0" layoutY="716.0" mnemonicParsing="false" onAction="#handleButtonAction" text="Delete Record" />
-      <TextField fx:id="tf_select" layoutX="165.0" layoutY="30.0" />
+      <TextField fx:id="tf_select" layoutX="165.0" layoutY="30.0" promptText="Enter Property ID" />
       <Button fx:id="filterBtn" layoutX="341.0" layoutY="30.0" mnemonicParsing="false" onAction="#handleButtonAction" text="Filter PropertyID" />
       <Button fx:id="clearBtn" layoutX="460.0" layoutY="30.0" mnemonicParsing="false" onAction="#handleButtonAction" text="Clear Filter" />
+      <Button fx:id="exportBtn" layoutX="36.0" layoutY="760.0" mnemonicParsing="false" onAction="#handleButtonAction" text="Export Data" />
    </children>
 </AnchorPane>

@@ -1,5 +1,6 @@
 package application;
 
+import java.io.*;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.Date;
@@ -32,6 +33,8 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 
 public class MainController implements Initializable {
 	@FXML
@@ -80,11 +83,13 @@ public class MainController implements Initializable {
 	private Button filterBtn;
 	@FXML
 	private Button clearBtn;
-	
+	@FXML
+	private Button exportBtn;
 	
 	@FXML
 	private void handleButtonAction(ActionEvent event) {
 		if (event.getSource() == updateBtn) {
+			updateBtn.setDisable(false);
 			updateRecord();
 		} if (event.getSource() == insertBtn) {
 			insertRecord();
@@ -110,6 +115,8 @@ public class MainController implements Initializable {
 			showFilteredAutoclaves();
 		} if (event.getSource() == clearBtn) {
 			clearFilter();
+		} if (event.getSource() == exportBtn) {
+			writeToCSV();
 		}
 	}
 	
@@ -125,8 +132,10 @@ public class MainController implements Initializable {
 	public Connection getConnection() {
 		Connection conn;
 		try {
-			// everything up to localhost:3306/ should be correct. Only thing that may need corrected is the table name......
-			conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/sys", "xxx", "xxx");
+			// jdbc:mysql://localhost:3306 is the current connection /cs469 is the current schema
+			// "username" is the username that was setup when creating the server
+			// "password" is the password set up when creating the server
+			conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/cs469", "root", "cs469");
 			System.out.println("connection successful");
 			return conn;
 		}catch(Exception ex){
@@ -137,6 +146,7 @@ public class MainController implements Initializable {
 	
 	public ObservableList<Autoclaves> getAutoclavesList(){
 		ObservableList<Autoclaves> autoclaveList = FXCollections.observableArrayList();
+		
 		Connection conn = getConnection();
 		String query = "SELECT * FROM atest";
 		Statement st;
@@ -242,6 +252,7 @@ public class MainController implements Initializable {
 					|| tf_pressure.getText().equals("") || tf_pressure.getText().trim().isEmpty()
 					|| tf_runtime.getText().equals("") || tf_runtime.getText().trim().isEmpty()) {
 				System.out.println("Error: Missing fields");
+				updateBtn.setDisable(false);
 				Alert alert = new Alert(Alert.AlertType.WARNING);
 				alert.setTitle("UPDATE UNSUCCESSFUL");
 				alert.setContentText("Update Unsuccessful: Missing data, please make sure all fields are completed");
@@ -258,6 +269,9 @@ public class MainController implements Initializable {
 				pst.setString(8, tf_entryNo.getText());
 				pst.executeUpdate();
 				insertBtn.setDisable(false);
+				updateBtn.setDisable(true);
+				deleteBtn.setDisable(true);
+				tf_entryNo.setEditable(true);
 				
 				//clear the fields
 				clearFields();
@@ -276,7 +290,7 @@ public class MainController implements Initializable {
 	 * This is the INSERT operation
 	 */
 	private void insertRecord() {
-		String query = "INSERT INTO sys.atest (entry_no, prop_id, run_date, runtime, temperature, pressure, t_result, load_desc) values (?, ?, ?, ?, ?, ?, ?, ?)";
+		String query = "INSERT INTO atest (entry_no, prop_id, run_date, runtime, temperature, pressure, t_result, load_desc) values (?, ?, ?, ?, ?, ?, ?, ?)";
 		Connection conn = getConnection();
 		try {
 			
@@ -350,8 +364,10 @@ public class MainController implements Initializable {
 				
 				tf_entryNo.setEditable(false); // set to false so that you cannot accidently edit the wrong entry and/or an entry that does not exist
 			} else {
-				updateBtn.setDisable(true);
-				deleteBtn.setDisable(true);
+				if (tf_entryNo.getText().isEmpty()) {
+					updateBtn.setDisable(true);
+					deleteBtn.setDisable(true);
+				}
 			}
 		});
 	}
@@ -360,13 +376,16 @@ public class MainController implements Initializable {
 	 * This is the DELETE operation
 	 */
 	private void deleteRecord() {
-		String query = "DELETE from sys.atest WHERE entry_no = ?";
+		String query = "DELETE from atest WHERE entry_no = ?";
 		Connection conn = getConnection();
 		try {
 			PreparedStatement pst = conn.prepareStatement(query);
 			pst.setString(1, tf_entryNo.getText());
 			pst.executeUpdate();
 			insertBtn.setDisable(false); // make the insert button appear again
+			updateBtn.setDisable(true); // make the update button disappear again
+			deleteBtn.setDisable(true); // make the delete button disappear again
+			clearFields();
 			
 		} catch(Exception e) {
 			System.out.println("Couldnt delete");
@@ -384,17 +403,18 @@ public class MainController implements Initializable {
         }
     }
     
+    
     /**
      * This method clears the fields after an UPDATE or INSERT operation is performed.
      */
     private void clearFields() {
-    	tf_propertyID.setText(null);
-    	tf_runtime.setText(null);
-    	tf_temperature.setText(null);
-    	tf_pressure.setText(null);
-    	tf_tResult.setText(null);
-    	tf_loadDesc.setText(null);
-    	tf_entryNo.setText(null);
+    	tf_propertyID.clear();
+    	tf_runtime.clear();
+    	tf_temperature.clear();
+    	tf_pressure.clear();
+    	tf_tResult.clear();
+    	tf_loadDesc.clear();
+    	tf_entryNo.clear();
     	df_startTime.setValue(null);
     }
     
@@ -404,6 +424,64 @@ public class MainController implements Initializable {
     private void clearFilter() {
     	tf_select.clear();
     	showAutoclaves();
+    }
+    
+    public void writeToCSV() {
+        Connection conn = getConnection();
+        String csvFilePath = "Autoclaves-export.csv";
+        String home = System.getProperty("user.home");
+        
+        
+        try {
+            String sql = "SELECT * FROM atest";
+             
+            Statement statement = conn.createStatement();
+             
+            ResultSet result = statement.executeQuery(sql);
+             
+            BufferedWriter fileWriter = new BufferedWriter(new FileWriter(home + "/Downloads/" + csvFilePath));
+             
+            // write header line containing column names       
+            fileWriter.write("entry no,property id,date,total runtime,temperature,pressure,test result,load desc");
+             
+            while (result.next()) {
+            	
+                String entryNo = result.getString("entry_no");
+                String proprtyID = result.getString("prop_id");
+                
+                Date rundate = result.getDate("run_date");
+                DateFormat dateFormat = new SimpleDateFormat("yyyy-mm-dd");  
+                String strDate = dateFormat.format(rundate);  
+                
+                int runtime = result.getInt("runtime");
+                int temp = result.getInt("temperature");
+                int press = result.getInt("pressure");
+                String t_res = result.getString("t_result");
+                String comment = result.getString("load_desc");
+                 
+                if (comment == null) {
+                    comment = "";   // write empty value for null
+                } else {
+                    comment = "\"" + comment + "\""; // escape double quotes
+                }
+                 
+                String line = String.format("\"%s\",%s,%s,%o,%o,%o,%s,%s",
+                		entryNo, proprtyID, strDate, runtime, temp, press, t_res, comment);
+                 
+                fileWriter.newLine();
+                fileWriter.write(line);            
+            }
+             
+            statement.close();
+            fileWriter.close();
+             
+        } catch (SQLException e) {
+            System.out.println("Datababse error:");
+            e.printStackTrace();
+        } catch (IOException e) {
+            System.out.println("File IO error:");
+            e.printStackTrace();
+        }
     }
 
 }
