@@ -87,8 +87,13 @@ public class MainController implements Initializable {
 	private Button exportBtn;
 	
 	@FXML
+	/**
+	 * This function handles all of the button interactions on the GUI
+	 * @param event
+	 */
 	private void handleButtonAction(ActionEvent event) {
 		if (event.getSource() == updateBtn) {
+			updateBtn.setDisable(false); // make the button visible
 			updateRecord();
 		} if (event.getSource() == insertBtn) {
 			insertRecord();
@@ -96,6 +101,7 @@ public class MainController implements Initializable {
 			showAutoclaves();
 		} if (event.getSource() == deleteBtn) {
 			deleteBtn.setOnAction(e -> {
+				
 				// this will ask the user to confirm deletion
 				Alert delAlert = new Alert(AlertType.CONFIRMATION);
 				delAlert.setHeaderText("Confirm Deletion?");
@@ -131,8 +137,10 @@ public class MainController implements Initializable {
 	public Connection getConnection() {
 		Connection conn;
 		try {
-			// everything up to localhost:3306/ should be correct. Only thing that may need corrected is the table name......
-			conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/sys", "xxx", "xxx");
+			// jdbc:mysql://localhost:3306 is the current connection /cs469 is the current schema
+			// "username" is the username that was setup when creating the server. Changed in this code to maintain database security.
+			// "password" is the password set up when creating the server. Changed in this code to maintain database security.
+			conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/cs469", "username", "password");
 			System.out.println("connection successful");
 			return conn;
 		}catch(Exception ex){
@@ -141,6 +149,12 @@ public class MainController implements Initializable {
 		}
 	}
 	
+	/** 
+	 * This method returns all autoclave entries from the atest database in the form of an observable list. 
+	 * Taken from a Result Set.
+	 * 
+	 * @return autoclaveList (Result Set)
+	 */
 	public ObservableList<Autoclaves> getAutoclavesList(){
 		ObservableList<Autoclaves> autoclaveList = FXCollections.observableArrayList();
 		
@@ -171,7 +185,6 @@ public class MainController implements Initializable {
 	public void showAutoclaves() {
 		ObservableList<Autoclaves> list = getAutoclavesList();
 		
-		// need to finish this!!!!!!!!!!!
 		col_entryNumber.setCellValueFactory(new PropertyValueFactory<Autoclaves, Integer>("entry_no"));
 		col_propertyID.setCellValueFactory(new PropertyValueFactory<Autoclaves, String>("prop_id"));
 		col_runDate.setCellValueFactory(new PropertyValueFactory<Autoclaves, Date>("run_date"));
@@ -186,7 +199,9 @@ public class MainController implements Initializable {
 	}
 	
 	/**
-	 * This returns the list of autoclave entries by propertyID
+	 * This returns the list of autoclave entries using a SELECT by propertyID.
+	 * Acts as a filter
+	 * 
 	 * @return autoclaveList
 	 */
 	public ObservableList<Autoclaves> selectRecords() {
@@ -217,7 +232,6 @@ public class MainController implements Initializable {
 	public void showFilteredAutoclaves() {
 		ObservableList<Autoclaves> list = selectRecords();
 		
-		// need to finish this!!!!!!!!!!!
 		col_entryNumber.setCellValueFactory(new PropertyValueFactory<Autoclaves, Integer>("entry_no"));
 		col_propertyID.setCellValueFactory(new PropertyValueFactory<Autoclaves, String>("prop_id"));
 		col_runDate.setCellValueFactory(new PropertyValueFactory<Autoclaves, Date>("run_date"));
@@ -243,12 +257,14 @@ public class MainController implements Initializable {
 			// reformat the date to the acceptable MySQL format which is 'yyyy-mm-dd'
 			String fDate = df_startTime.getValue().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 			
+			// validate the fields to make sure none of the required fields are blank
 			if (tf_propertyID.getText().equals("") || tf_propertyID.getText().trim().isEmpty()
 					|| tf_tResult.getText().equals("") || tf_tResult.getText().trim().isEmpty()
 					|| tf_temperature.getText().equals("") || tf_temperature.getText().trim().isEmpty()
 					|| tf_pressure.getText().equals("") || tf_pressure.getText().trim().isEmpty()
 					|| tf_runtime.getText().equals("") || tf_runtime.getText().trim().isEmpty()) {
 				System.out.println("Error: Missing fields");
+				updateBtn.setDisable(false);
 				Alert alert = new Alert(Alert.AlertType.WARNING);
 				alert.setTitle("UPDATE UNSUCCESSFUL");
 				alert.setContentText("Update Unsuccessful: Missing data, please make sure all fields are completed");
@@ -264,8 +280,12 @@ public class MainController implements Initializable {
 				pst.setString(7, tf_loadDesc.getText());
 				pst.setString(8, tf_entryNo.getText());
 				pst.executeUpdate();
+				
+				//reset button visibility after query executed
 				insertBtn.setDisable(false);
-				tf_entryNo.setEditable(true);
+				updateBtn.setDisable(true);
+				deleteBtn.setDisable(true);
+				tf_entryNo.setEditable(true); // allow user to edit field again
 				
 				//clear the fields
 				clearFields();
@@ -284,7 +304,7 @@ public class MainController implements Initializable {
 	 * This is the INSERT operation
 	 */
 	private void insertRecord() {
-		String query = "INSERT INTO sys.atest (entry_no, prop_id, run_date, runtime, temperature, pressure, t_result, load_desc) values (?, ?, ?, ?, ?, ?, ?, ?)";
+		String query = "INSERT INTO atest (entry_no, prop_id, run_date, runtime, temperature, pressure, t_result, load_desc) values (?, ?, ?, ?, ?, ?, ?, ?)";
 		Connection conn = getConnection();
 		try {
 			
@@ -340,9 +360,12 @@ public class MainController implements Initializable {
 	private void addListenerForTable(){
 		tv_autoclaves.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
 			if(newSelection != null) {
+				// user selected a record which means they are updating/deleting. Set button visibility.
 				updateBtn.setDisable(false);
 				insertBtn.setDisable(true);
 				deleteBtn.setDisable(false);
+				
+				// populate the fillable fields with data from the table 
 				tf_propertyID.setText(newSelection.getProp_id());
 				tf_loadDesc.setText(newSelection.getLoad_desc());
 				tf_tResult.setText(newSelection.getT_result());
@@ -358,8 +381,11 @@ public class MainController implements Initializable {
 				
 				tf_entryNo.setEditable(false); // set to false so that you cannot accidently edit the wrong entry and/or an entry that does not exist
 			} else {
-				updateBtn.setDisable(true);
-				deleteBtn.setDisable(true);
+				// record could not be updated/deleted therefore the update and delete buttons should still be visible.
+				if (tf_entryNo.getText().isEmpty()) {
+					updateBtn.setDisable(true);
+					deleteBtn.setDisable(true);
+				}
 			}
 		});
 	}
@@ -368,13 +394,16 @@ public class MainController implements Initializable {
 	 * This is the DELETE operation
 	 */
 	private void deleteRecord() {
-		String query = "DELETE from sys.atest WHERE entry_no = ?";
+		String query = "DELETE from atest WHERE entry_no = ?";
 		Connection conn = getConnection();
 		try {
 			PreparedStatement pst = conn.prepareStatement(query);
 			pst.setString(1, tf_entryNo.getText());
 			pst.executeUpdate();
 			insertBtn.setDisable(false); // make the insert button appear again
+			updateBtn.setDisable(true); // make the update button disappear again
+			deleteBtn.setDisable(true); // make the delete button disappear again
+			clearFields();
 			
 		} catch(Exception e) {
 			System.out.println("Couldnt delete");
@@ -397,18 +426,20 @@ public class MainController implements Initializable {
      * This method clears the fields after an UPDATE or INSERT operation is performed.
      */
     private void clearFields() {
-    	tf_propertyID.setText(null);
-    	tf_runtime.setText(null);
-    	tf_temperature.setText(null);
-    	tf_pressure.setText(null);
-    	tf_tResult.setText(null);
-    	tf_loadDesc.setText(null);
-    	tf_entryNo.setText(null);
+    	tf_propertyID.clear();
+    	tf_runtime.clear();
+    	tf_temperature.clear();
+    	tf_pressure.clear();
+    	tf_tResult.clear();
+    	tf_loadDesc.clear();
+    	tf_entryNo.clear();
     	df_startTime.setValue(null);
     }
     
     /**
      * This method clears the SELECT filter and returns all the autoclave entries
+     * 
+     * Reference: https://community.oracle.com/tech/developers/discussion/2397100/javafx2-1-tableview-can-the-contents-of-a-tableview-be-exported-to-excel
      */
     private void clearFilter() {
     	tf_select.clear();
@@ -416,18 +447,15 @@ public class MainController implements Initializable {
     }
     
     public void writeToCSV() {
-    	String jdbcURL = "jdbc:mysql://localhost:3306/sys";
-        String username = "xxx";
-        String password = "xxx";
-        
-        String csvFilePath = "Autoclvaes-export.csv";
+        Connection conn = getConnection();
+        String csvFilePath = "Autoclaves-export.csv";
         String home = System.getProperty("user.home");
         
         
-        try (Connection connection = DriverManager.getConnection(jdbcURL, username, password)) {
+        try {
             String sql = "SELECT * FROM atest";
              
-            Statement statement = connection.createStatement();
+            Statement statement = conn.createStatement();
              
             ResultSet result = statement.executeQuery(sql);
              
